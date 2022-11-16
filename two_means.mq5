@@ -31,7 +31,7 @@ double point = 0.0;
 
 int OnInit() {
    point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
-   // SPREAD = SPREAD * point;
+   SPREAD = SPREAD * point;
    LIMIT_STOP = LIMIT_STOP * point;
    ma_handler_high = iMA(_Symbol, _Period, MEAN_PERIODS, 0, MODE_SMA, PRICE_HIGH);
    ma_handler_low = iMA(_Symbol, _Period, MEAN_PERIODS, 0, MODE_SMA, PRICE_LOW);
@@ -56,7 +56,13 @@ void OnTick() {
    MqlDateTime rightNow;
    TimeCurrent(rightNow);
    TimeToStruct(TimeCurrent(),rightNow);
-   if (!(rightNow.hour >= 2 && rightNow.hour <= 22)) return;
+   if (!(
+      rightNow.hour >= 2
+      && (
+         rightNow.hour <= 22 ||
+         (rightNow.hour == 23 && rightNow.min < 1)
+      )
+   )) return;
 
    if (time_passed == false) return;
    if (!PositionSelectByTicket(trade_ticket)) trade_ticket = 0;
