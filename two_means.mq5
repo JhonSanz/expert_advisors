@@ -8,11 +8,13 @@ ulong trade_ticket = 0;
 bool time_passed = true;
 datetime time_candle;
 double last_close = 0;
+double last_low = 0;
+double last_high = 0;
 
-uint MEAN_PERIODS = 423;
+uint MEAN_PERIODS = 715;
 uint CANDLE_STICK = 60 * 10;
-uint STOP = 20;
 double VOLUME = 0.1;
+double LIMIT_STOP = 500; // puntos
 
 int ma_handler_high = 0;
 int ma_handler_low = 0;
@@ -23,8 +25,14 @@ double ma_low_array[];
 
 bool limit_low;
 bool limit_high;
+double diff = 0;
+double SPREAD = 10;
+double point = 0.0;
 
 int OnInit() {
+   point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+   // SPREAD = SPREAD * point;
+   LIMIT_STOP = LIMIT_STOP * point;
    ma_handler_high = iMA(_Symbol, _Period, MEAN_PERIODS, 0, MODE_SMA, PRICE_HIGH);
    ma_handler_low = iMA(_Symbol, _Period, MEAN_PERIODS, 0, MODE_SMA, PRICE_LOW);
    return(INIT_SUCCEEDED);
@@ -37,10 +45,17 @@ void OnTick() {
 
    time_candle = iTime(_Symbol, _Period, 1);
    last_close = iClose(_Symbol, _Period, 1);
+   last_low = iLow(_Symbol, _Period, 1);
+   last_high = iHigh(_Symbol, _Period, 1);
 
-   if (time_candle == StringToTime("2022.09.01 04:32")) {
-      Print("hola");
-   }
+   double Ask_op = NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_ASK), _Digits);
+   double Bid_op = NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_BID), _Digits);
+   diff = Ask_op - Bid_op;
+
+   MqlDateTime rightNow;
+   TimeCurrent(rightNow);
+   TimeToStruct(TimeCurrent(),rightNow);
+   if (!(rightNow.hour > 2 && rightNow.hour < 22)) return;
 
    if (time_passed == false) return;
    if (!PositionSelectByTicket(trade_ticket)) trade_ticket = 0;
@@ -66,11 +81,19 @@ void OnTick() {
    if (trade_ticket == 0) {
       if (
          limit_low == true
-         && last_close > ma_low_array[1]
-         && last_close > ma_high_array[1]
+         && diff <= SPREAD
+         && last_low > ma_low_array[1]
+         && last_low > ma_high_array[1]
       ) {
-         double Ask = NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_ASK), _Digits);   
-         trade.Buy(VOLUME, _Symbol, Ask, ma_low_array[1]);
+         double Ask = NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_ASK), _Digits);
+         double insurance = 0.0;
+         /*if (Ask -  ma_low_array[1] > LIMIT_STOP) {
+            insurance = Ask - LIMIT_STOP;
+         } else {
+            insurance = ma_low_array[1];
+         }*/
+         insurance = Ask - LIMIT_STOP;
+         trade.Buy(VOLUME, _Symbol, Ask, insurance);
          trade_ticket = trade.ResultOrder();
          time_passed = false;
          EventSetTimer(CANDLE_STICK);
@@ -78,11 +101,19 @@ void OnTick() {
       }
       if (
          limit_high == true
-         && last_close < ma_low_array[1]
-         && last_close < ma_high_array[1]
+         && diff <= SPREAD
+         && last_high < ma_low_array[1]
+         && last_high < ma_high_array[1]
       ) {
          double Bid = NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_BID), _Digits);
-         trade.Sell(VOLUME, _Symbol, Bid, ma_high_array[1]);
+         double insurance = 0.0;
+         /*if (ma_high_array[1] - Bid > LIMIT_STOP) {
+            insurance = Bid + LIMIT_STOP;
+         } else {
+            insurance = ma_high_array[1];
+         }*/
+         insurance = Bid + LIMIT_STOP;
+         trade.Sell(VOLUME, _Symbol, Bid, insurance);
          trade_ticket = trade.ResultOrder();
          time_passed = false;
          EventSetTimer(CANDLE_STICK);
