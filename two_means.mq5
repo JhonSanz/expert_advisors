@@ -52,10 +52,11 @@ void OnTick() {
    double Bid_op = NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_BID), _Digits);
    diff = Ask_op - Bid_op;
 
+    
    MqlDateTime rightNow;
    TimeCurrent(rightNow);
    TimeToStruct(TimeCurrent(),rightNow);
-   if (!(rightNow.hour > 2 && rightNow.hour < 22)) return;
+   if (!(rightNow.hour >= 2 && rightNow.hour <= 22)) return;
 
    if (time_passed == false) return;
    if (!PositionSelectByTicket(trade_ticket)) trade_ticket = 0;
@@ -139,4 +140,3 @@ void OnTick() {
 void OnTimer() {
    time_passed = true;
 }
-  
