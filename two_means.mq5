@@ -26,7 +26,7 @@ double ma_low_array[];
 bool limit_low;
 bool limit_high;
 double diff = 0;
-double SPREAD = 10;
+double SPREAD = 10000000000000;
 double point = 0.0;
 
 int OnInit() {

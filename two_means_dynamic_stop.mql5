@@ -11,10 +11,10 @@ double last_close = 0;
 double last_low = 0;
 double last_high = 0;
 
-uint MEAN_PERIODS = 715;
+uint MEAN_PERIODS = 504;
 uint CANDLE_STICK = 60 * 10;
 double VOLUME = 0.1;
-double LIMIT_STOP = 500; // puntos
+double LIMIT_STOP = 100; // puntos
 
 int ma_handler_high = 0;
 int ma_handler_low = 0;
@@ -26,7 +26,7 @@ double ma_low_array[];
 bool limit_low;
 bool limit_high;
 double diff = 0;
-double SPREAD = 10;
+double SPREAD = 10000000000;
 double point = 0.0;
 
 double higher_close = 0.0;
@@ -131,7 +131,8 @@ void OnTick() {
          && last_low > ma_high_array[1]
       ) {
          double Ask = NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_ASK), _Digits);
-         trade.Buy(VOLUME, _Symbol, Ask, Ask - LIMIT_STOP);
+         double Bid = NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_BID), _Digits);
+         trade.Buy(VOLUME, _Symbol, Ask, Bid - LIMIT_STOP);
          trade_ticket = trade.ResultOrder();
          time_passed = false;
          EventSetTimer(CANDLE_STICK);
@@ -159,6 +160,7 @@ void OnTick() {
    ) {
       limit_high = true;
    }
+   new_close = false;
 }
 
 void OnTimer() {
