@@ -1,0 +1,74 @@
+#include <Trade/Trade.mqh>
+#include <Trade/PositionInfo.mqh>
+ 
+CTrade trade;
+CPositionInfo pos_info;
+bool time_passed = true;
+
+double take_profit = 6;
+double stop_loss = 12;
+uint MEAN_PERIODS = 5;
+double VOLUME = 0.1;
+
+double ma_array[];
+int ma_handler = 0;
+
+int frame_init = 0;
+int frame_end = 0;
+bool limit_low;
+bool limit_high;
+double SPREAD = 10;
+
+double last_tick_value = 0.0;
+
+int OnInit() {
+    ma_handler = iMA(_Symbol, _Period, MEAN_PERIODS, 0, MODE_SMA, PRICE_HIGH);
+    return(INIT_SUCCEEDED);
+}
+
+void closeAll() { 
+    for(int i = PositionsTotal() - 1; i >= 0; i--) {
+        if(pos_info.SelectByIndex(i)) {
+            trade.PositionClose(pos_info.Ticket());
+        }
+    }
+}
+
+void OnTick() {
+    CopyBuffer(ma_handler, 0, 1, 1, ma_array);
+    double point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+
+    double bid = NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_BID), _Digits);
+    double ask = NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_ASK), _Digits); 
+    double diff = ask - bid;
+
+    if(last_tick_value == 0.0) {
+        last_tick_value = bid;
+        return;
+    }
+    if (bid > ma_array[0]) {
+        if (limit_low == true) { closeAll(); }
+        if (diff <= SPREAD * point) {
+            trade.Buy(VOLUME, _Symbol, ask,  bid - (stop_loss * point), ask + (take_profit * point));
+        }
+        limit_low = false;
+    } else if(bid < ma_array[0]) {
+        if (limit_high == true) { closeAll(); }
+        if (diff <= SPREAD * point) {
+            trade.Sell(VOLUME, _Symbol, bid, ask + (stop_loss * point), bid - (take_profit * point) );
+        }
+        limit_high = false;
+    }
+
+    if (bid < ma_array[0]) {
+        limit_low = true;
+    } else if (
+        bid > ma_array[0]
+    ) {
+        limit_high = true;
+    }
+    last_tick_value = bid;
+}
+void OnTimer() {
+   time_passed = true;
+}

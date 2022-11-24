@@ -11,10 +11,10 @@ double last_close = 0;
 double last_low = 0;
 double last_high = 0;
 
-uint MEAN_PERIODS = 4;
+uint MEAN_PERIODS = 500;
 uint CANDLE_STICK = 60 * 10;
 double VOLUME = 0.1;
-double LIMIT_STOP = 500; // puntos
+double LIMIT_STOP = 1000; // puntos
 
 int ma_handler_high = 0;
 int ma_handler_low = 0;
@@ -105,8 +105,11 @@ void OnTick() {
             ma_high_array[1], ma_low_array[1]
          );
       }
-      if (Bid_op == position_stop) {
-         Print("stop_loss: ", position_stop);
+      if (
+            (Bid_op < position_stop && pos_info.PositionType() == POSITION_TYPE_BUY)
+            ||
+            (Ask_op > position_stop && pos_info.PositionType() == POSITION_TYPE_SELL)
+      ) {
          trade.PositionClose(trade_ticket, 0);
          position_stop = 0.0;
       }
@@ -137,8 +140,8 @@ void OnTick() {
       ) {
          double Ask = NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_ASK), _Digits);
          double Bid = NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_BID), _Digits);
-         position_stop = Bid - LIMIT_STOP;
-         trade.Buy(VOLUME, _Symbol, Ask);
+         position_stop = last_close - LIMIT_STOP;
+         trade.Buy(VOLUME, _Symbol, Ask, 0, 0, (string)position_stop);
          trade_ticket = trade.ResultOrder();
          time_passed = false;
          EventSetTimer(CANDLE_STICK);
@@ -151,8 +154,8 @@ void OnTick() {
          && last_high < ma_high_array[1]
       ) {
          double Bid = NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_BID), _Digits);
-         position_stop = Bid + LIMIT_STOP;
-         trade.Sell(VOLUME, _Symbol, Bid);
+         position_stop = last_close + LIMIT_STOP;
+         trade.Sell(VOLUME, _Symbol, Bid, 0, 0, (string)position_stop);
          trade_ticket = trade.ResultOrder();
          time_passed = false;
          EventSetTimer(CANDLE_STICK);
