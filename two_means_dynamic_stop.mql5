@@ -1,5 +1,6 @@
 #include <Trade/Trade.mqh>
 #include <Trade/PositionInfo.mqh>
+#include <Math\Stat\Math.mqh>
 
 CTrade trade;
 CPositionInfo pos_info;
@@ -14,7 +15,7 @@ double last_high = 0;
 uint MEAN_PERIODS = 500;
 uint CANDLE_STICK = 60 * 10;
 double VOLUME = 0.1;
-double LIMIT_STOP = 1000; // puntos
+double LIMIT_STOP = 700; // puntos
 
 int ma_handler_high = 0;
 int ma_handler_low = 0;
@@ -106,9 +107,9 @@ void OnTick() {
          );
       }
       if (
-            (Bid_op < position_stop && pos_info.PositionType() == POSITION_TYPE_BUY)
+            ((int)(MathRound(Bid_op, 5) * MathPow(10,5)) < (int)(MathRound(position_stop, 5) * MathPow(10,5)) && pos_info.PositionType() == POSITION_TYPE_BUY)
             ||
-            (Ask_op > position_stop && pos_info.PositionType() == POSITION_TYPE_SELL)
+            ((int)(MathRound(Ask_op, 5) * MathPow(10,5)) > (int)(MathRound(position_stop, 5) * MathPow(10,5)) && pos_info.PositionType() == POSITION_TYPE_SELL)
       ) {
          trade.PositionClose(trade_ticket, 0);
          position_stop = 0.0;
