@@ -5,9 +5,9 @@ CTrade trade;
 CPositionInfo pos_info;
 bool time_passed = true;
 
-double take_profit = 6;
-double stop_loss = 12;
-uint MEAN_PERIODS = 5;
+double take_profit = 20;
+double stop_loss = 50;
+uint MEAN_PERIODS = 2; 
 double VOLUME = 0.1;
 
 double ma_array[];
@@ -20,6 +20,7 @@ bool limit_high;
 double SPREAD = 10;
 
 double last_tick_value = 0.0;
+ulong trade_ticket = 0;
 
 int OnInit() {
     ma_handler = iMA(_Symbol, _Period, MEAN_PERIODS, 0, MODE_SMA, PRICE_HIGH);
@@ -46,16 +47,19 @@ void OnTick() {
         last_tick_value = bid;
         return;
     }
-    if (bid > ma_array[0]) {
+    if (!PositionSelectByTicket(trade_ticket)) trade_ticket = 0;
+    if (bid > ma_array[0] && trade_ticket == 0) {
         if (limit_low == true) { closeAll(); }
-        if (diff <= SPREAD * point) {
+        if (diff <= SPREAD * point && bid - last_tick_value > 0) {
             trade.Buy(VOLUME, _Symbol, ask,  bid - (stop_loss * point), ask + (take_profit * point));
+            trade_ticket = trade.ResultOrder();
         }
         limit_low = false;
-    } else if(bid < ma_array[0]) {
+    } else if(bid < ma_array[0] && trade_ticket == 0) {
         if (limit_high == true) { closeAll(); }
-        if (diff <= SPREAD * point) {
+        if (diff <= SPREAD * point && bid - last_tick_value < 0) {
             trade.Sell(VOLUME, _Symbol, bid, ask + (stop_loss * point), bid - (take_profit * point) );
+            trade_ticket = trade.ResultOrder();
         }
         limit_high = false;
     }
