@@ -27,8 +27,8 @@ void OnStart()
    SetIndexBuffer(0,FirstIndicatorBuffer,INDICATOR_DATA);
 
    int to_copy = Bars(sSymbol,PERIOD_CURRENT);
-   int zeroZigZag = iCustom(_Symbol, _Period, "../Indicators/Examples/ZigzagColor");
-   int firstZigZag = iCustom(_Symbol, _Period, "../Indicators/Examples/ZigzagColor");
+   int zeroZigZag = iCustom(_Symbol, _Period, "../Indicators/Examples/ZigzagColor", 500);
+   int firstZigZag = iCustom(_Symbol, _Period, "../Indicators/Examples/ZigzagColor", 500);
 
    CopyBuffer(zeroZigZag, 0, 0, to_copy, ZeroIndicatorBuffer);
    CopyBuffer(firstZigZag, 1, 0, to_copy, FirstIndicatorBuffer);
